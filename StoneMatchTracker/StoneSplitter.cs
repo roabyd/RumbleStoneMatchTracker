@@ -2,6 +2,7 @@
 using UnityEngine;
 using EzySlice;
 using MelonLoader;
+using MatchCounterFiles;
 
 namespace StoneMatchTracker
 {
@@ -23,7 +24,12 @@ namespace StoneMatchTracker
         private Dictionary<GameObject, Vector3> initialShardPositions = new Dictionary<GameObject, Vector3>();
         private Transform originalParent;
 
-        public IEnumerator SplitStone(int numberOfSlices)
+        //Explosion variables
+        private float rumbleDuration = 2f;
+        private float maxRumbleIntensity = 0.005f;
+        public AudioClip explodeSound;
+
+        public IEnumerator SplitStone(int numberOfSlices, bool explode = false)
         {
             if (objectToSlice != null)
             {
@@ -44,19 +50,26 @@ namespace StoneMatchTracker
                 for (int i = 0; i < numberOfSlices - 1; i++)
                 {
                     GameObject pieceToSlice = pieces[0];
-                    float baseAngle = (360f / numberOfSlices) * i;
+                    float baseAngle = numberOfSlices == 2 ? 90 : (360f / numberOfSlices) * i;
 
-                    float finalAngle = baseAngle + UnityEngine.Random.Range(-15f, 15f);
+                    float finalAngle = baseAngle + UnityEngine.Random.Range(-10f, 10f);
 
                     // Create the direction vector in local space
                     Vector3 randomDirectionLocal = Quaternion.AngleAxis(finalAngle, Vector3.up) * Vector3.forward;
 
                     // Transform the direction vector into world space
-                    Vector3 randomDirectionWorld = pieceToSlice.transform.TransformDirection(randomDirectionLocal);
+                    Vector3 randomDirectionWorld = pieceToSlice.transform.parent.transform.TransformDirection(randomDirectionLocal);
 
                     // Use the object's world position as the center
                     Vector3 worldCenter = pieceToSlice.transform.position;
-                    SlicedHull slicedHull = pieceToSlice.Slice(worldCenter, worldCenter + randomDirectionWorld.normalized * 5f, cutMaterial);
+
+                    // Start with a vertical plane normal (perpendicular to up and slice direction)
+                    Vector3 sliceNormal = Vector3.Cross(randomDirectionWorld, originalParent.transform.up).normalized;
+                    float tiltAngle = UnityEngine.Random.Range(-5f, 5f);
+                    Quaternion tiltRotation = Quaternion.AngleAxis(tiltAngle, randomDirectionWorld);
+                    sliceNormal = tiltRotation * sliceNormal;
+
+                    SlicedHull slicedHull = pieceToSlice.Slice(worldCenter, sliceNormal, cutMaterial);
 
                     if (slicedHull != null)
                     {
@@ -72,7 +85,7 @@ namespace StoneMatchTracker
                     }
                 }
 
-                yield return MelonCoroutines.Start(MovePiecesOutward());
+                yield return MelonCoroutines.Start(MovePiecesOutward(explode));
             }
             else
             {
@@ -91,11 +104,12 @@ namespace StoneMatchTracker
             yield return null;
         }
 
-        private IEnumerator MovePiecesOutward()
+        private IEnumerator MovePiecesOutward(bool explode)
         {
             float elapsedTime = 0f;
             Dictionary<GameObject, Vector3> initialPositions = new Dictionary<GameObject, Vector3>();
             Dictionary<GameObject, Vector3> targetPositions = new Dictionary<GameObject, Vector3>();
+            Dictionary<GameObject, Vector3> initialScales = new Dictionary<GameObject, Vector3>();
 
             // Calculate initial and target positions in local space
             foreach (GameObject piece in pieces)
@@ -110,23 +124,44 @@ namespace StoneMatchTracker
                 // Store initial and target positions in local space
                 initialPositions[piece] = piece.transform.localPosition;
                 initialShardPositions[piece] = piece.transform.localPosition;
-                targetPositions[piece] = piece.transform.localPosition + outwardDirection * separationDistance;
+                if (explode)
+                {
+                    targetPositions[piece] = piece.transform.localPosition + outwardDirection * 2f;
+                    initialScales[piece] = piece.transform.localScale;
+                }
+                else
+                {
+                    targetPositions[piece] = piece.transform.localPosition + outwardDirection * separationDistance;
+                }
             }
+
+            //Play sound of the split
+            if (!explode)
+            {
+                var soundSource = originalParent.gameObject.GetComponent<AudioSource>();
+                soundSource.clip = ModResources.Sound3;
+                soundSource.time = 0f;
+                soundSource.Play();
+            }
+            
 
             // Animate movement
             while (elapsedTime < splitDuration)
             {
                 float t = elapsedTime / splitDuration;
-                float easedT = 1 - Mathf.Pow(1 - t, 25);
+                float easedT = 1 - Mathf.Pow(1 - t, explode ? 2 : 25);
 
                 foreach (GameObject piece in pieces)
                 {
                     if (piece != null)
                     {
                         // Lerp between initial and target positions in local space
-                        Vector3 initialPosition = initialPositions[piece];
-                        Vector3 targetPosition = targetPositions[piece];
-                        piece.transform.localPosition = Vector3.Lerp(initialPosition, targetPosition, easedT);
+                        piece.transform.localPosition = Vector3.Lerp(initialPositions[piece], targetPositions[piece], easedT);
+                        if (explode)
+                        {
+                            // Scale down
+                            piece.transform.localScale = Vector3.Lerp(initialScales[piece], Vector3.zero, easedT);
+                        }
                     }
                 }
 
@@ -139,7 +174,14 @@ namespace StoneMatchTracker
             {
                 if (piece != null)
                 {
-                    piece.transform.localPosition = targetPositions[piece];
+                    if (explode)
+                    {
+                        Destroy(piece); // Destroy the piece if exploded
+                    }
+                    else
+                    {
+                        piece.transform.localPosition = targetPositions[piece];
+                    }
                 }
             }
             objectIsSplit = true; // Mark the object as split
@@ -158,6 +200,12 @@ namespace StoneMatchTracker
                     splitPositions[piece] = piece.transform.localPosition; // Use local position
                 }
             }
+
+            //Play sound of the joining stone
+            var soundSource = originalParent.gameObject.GetComponent<AudioSource>();
+            soundSource.clip = ModResources.ReverseStone;
+            soundSource.time = 0.2f;
+            soundSource.Play();
 
             // Animate shards moving inward
             while (elapsedTime < splitDuration)
@@ -192,20 +240,37 @@ namespace StoneMatchTracker
             // Restore the backup object to its exact original transform
             if (backupObject != null)
             {
-                Core.Logger.Msg("Restoring backup to parent: " + originalParent.name);
-                Core.Logger.Msg("Backup object local pos BEFORE restore: " + backupObject.transform.localPosition);
+                //Destroy(backupObject.GetComponent<Rigidbody>()); // Remove the Rigidbody from the backup object
                 objectToSlice = backupObject; // Restore the reference to the original object
-                objectToSlice.transform.SetParent(originalParent, false);
-                objectToSlice.transform.localPosition = Vector3.zero;
-                objectToSlice.transform.localRotation = Quaternion.identity;
+                //objectToSlice.transform.SetParent(originalParent, false);
+                //objectToSlice.transform.localPosition = Vector3.zero;
+                //objectToSlice.transform.localRotation = Quaternion.identity;
                 objectToSlice.SetActive(true); // Re-enable the backup object
-                Core.Logger.Msg("objectToSlice local pos AFTER restore: " + objectToSlice.transform.localPosition);
                 objectToSlice.name = backupObjectName; // Restore the original name
             }
             else
             {
                 Core.Logger.Msg("Backup object is missing!");
             }
+        }
+
+        public void PlayLossAnimation()
+        {
+            AudioSource audio = objectToSlice.transform.parent.GetComponent<AudioSource>();
+            audio.clip = explodeSound;
+            audio.Play();
+            var rumble = objectToSlice.AddComponent<RumbleEffect>();
+            rumble.rumbleDuration = rumbleDuration;
+            rumble.maxIntensity = maxRumbleIntensity;
+            rumble.intensityOverTime = AnimationCurve.EaseInOut(0, 0, 1, 1);
+
+            rumble.onExplode = () =>
+            {
+                // Your custom explosion logic here:
+                MelonCoroutines.Start(SplitStone(UnityEngine.Random.Range(minPieces, maxPieces), true));
+            };
+
+            rumble.StartRumble();
         }
     }
 }

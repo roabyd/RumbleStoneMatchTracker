@@ -12,8 +12,8 @@ namespace MatchCounterFiles
         public GameObject endPosition;
         public float upMoveDuration = 2f;
         private Rigidbody rb;
-        public float stopDistance = 0.03f; // Distance threshold to stop pulling
-        public float pullForce = 2f;   // Strength of the pull
+        public float stopDistance = 0.05f; // Distance threshold to stop pulling
+        public float pullForce = 4f;   // Strength of the pull
         public bool Animating;
         private bool summoning;
 
@@ -22,18 +22,22 @@ namespace MatchCounterFiles
         private float totalSpinDuration = 1.5f; // How long it takes to spin down
         private int totalSpins = 3; // Number of full spins
         private Quaternion initialRotation;
+        private Quaternion intendedRotation;
         private Vector3 initialLocalPosition;
-
 
 
         void Start()
         {
             rb = GetComponent<Rigidbody>();
-            rb.isKinematic = true;
-            rb.useGravity = false;
-            rb.interpolation = RigidbodyInterpolation.Interpolate;
+            if (rb != null)
+            {
+                rb.isKinematic = true;
+                rb.useGravity = false;
+                rb.interpolation = RigidbodyInterpolation.Interpolate;
+            }
             summoning = false;
             Animating = false;
+            intendedRotation = transform.localRotation;
         }
 
         public IEnumerator SummonStone()
@@ -48,6 +52,7 @@ namespace MatchCounterFiles
                 yield return null;
             }
             Animating = false;
+            Destroy(rb);
         }
 
         private IEnumerator LiftTheStone()
@@ -80,12 +85,22 @@ namespace MatchCounterFiles
         {
             if (endPosition != null && summoning && !rb.isKinematic)
             {
-                Vector3 directionToHand = (endPosition.transform.position + new Vector3(0, 0.1f, 0)) - transform.position;
+                Vector3 directionToHand = (endPosition.transform.position + endPosition.transform.up * 0.1f) - transform.position;
+
                 float distanceToHand = directionToHand.magnitude;
 
                 if (distanceToHand > stopDistance)
                 {
                     float dampingFactor = Mathf.Clamp(distanceToHand / 7f, 0.2f, 1f);
+                    if (distanceToHand < 1f)
+                    {
+                        pullForce = 2;
+                    }
+                    else
+                    {
+                        pullForce = 4;
+                    }
+
                     rb.AddForce(directionToHand.normalized * pullForce * dampingFactor);
                 }
                 else
@@ -117,14 +132,14 @@ namespace MatchCounterFiles
                     Quaternion spin = Quaternion.Euler(0f, currentSpinAngle, 0f);
 
                     // Smooth rotation from initial rotation to identity
-                    Quaternion alignment = Quaternion.Slerp(initialRotation, Quaternion.identity, ease);
+                    Quaternion alignment = Quaternion.Slerp(initialRotation, intendedRotation, ease);
 
                     // Combine spin (Y) with upright alignment
                     transform.localRotation = spin * alignment;
                 }
                 else
                 {
-                    transform.localRotation = Quaternion.identity;
+                    transform.localRotation = intendedRotation;
                     transform.localPosition = Vector3.zero;
                     summoning = false;
                 }
