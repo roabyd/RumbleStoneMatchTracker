@@ -56,53 +56,54 @@ namespace StoneMatchTracker
 
         public override void OnUpdate()
         {
-            if (Input.GetKeyDown(KeyCode.I)) 
-            {
-                GenerateTrackerStone();
-            }
+            // Testing purposes only
+            //if (Input.GetKeyDown(KeyCode.I)) 
+            //{
+            //    GenerateTrackerStone();
+            //}
 
-            if (Input.GetKeyDown(KeyCode.S))
-            {
-                MelonCoroutines.Start(StoneSplitterScript.SplitStone(6));
-            }
+            //if (Input.GetKeyDown(KeyCode.S))
+            //{
+            //    MelonCoroutines.Start(StoneSplitterScript.SplitStone(6));
+            //}
 
-            if (Input.GetKeyDown(KeyCode.H))
-            {
-                MelonCoroutines.Start(StoneSplitterScript.SplitStone(2));
-            }
+            //if (Input.GetKeyDown(KeyCode.H))
+            //{
+            //    MelonCoroutines.Start(StoneSplitterScript.SplitStone(2));
+            //}
 
-            if (Input.GetKeyDown(KeyCode.J))
-            {
-                MelonCoroutines.Start(StoneSplitterScript.ReturnShardsToOriginal());              
-            }
+            //if (Input.GetKeyDown(KeyCode.J))
+            //{
+            //    MelonCoroutines.Start(StoneSplitterScript.ReturnShardsToOriginal());              
+            //}
 
-            if (Input.GetKeyDown(KeyCode.M))
-            {
-                MelonCoroutines.Start(TrackerStone.GetComponent<StoneSummoner>().SummonStone());
-            }
+            //if (Input.GetKeyDown(KeyCode.M))
+            //{
+            //    MelonCoroutines.Start(TrackerStone.GetComponent<StoneSummoner>().SummonStone());
+            //}
 
-            if (Input.GetKeyDown(KeyCode.W))
-            {
-                TrackerStone = StoneSplitterScript.objectToSlice;
-                if (TrackerStone == null)
-                {
-                    Logger.Error("TrackerStone is null!");
-                    return;
-                }
-                else if (TrackerStone.TryGetComponent<VictoryAnimator>(out var anim))
-                {
-                    MelonCoroutines.Start(anim.VictoryAnimation());
-                }
-                else
-                { 
-                   Logger.Error("TrackerStone does not have a VictoryAnimator component!");
-                }
-            }
+            //if (Input.GetKeyDown(KeyCode.W))
+            //{
+            //    TrackerStone = StoneSplitterScript.objectToSlice;
+            //    if (TrackerStone == null)
+            //    {
+            //        Logger.Error("TrackerStone is null!");
+            //        return;
+            //    }
+            //    else if (TrackerStone.TryGetComponent<VictoryAnimator>(out var anim))
+            //    {
+            //        MelonCoroutines.Start(anim.VictoryAnimation());
+            //    }
+            //    else
+            //    { 
+            //       Logger.Error("TrackerStone does not have a VictoryAnimator component!");
+            //    }
+            //}
 
-            if (Input.GetKeyDown(KeyCode.L))
-            {
-                StoneSplitterScript.PlayLossAnimation();
-            }
+            //if (Input.GetKeyDown(KeyCode.L))
+            //{
+            //    StoneSplitterScript.PlayLossAnimation();
+            //}
         }
 
         public override void OnLateInitializeMelon()
