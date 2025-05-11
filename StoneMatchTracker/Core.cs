@@ -41,6 +41,7 @@ namespace StoneMatchTracker
         {
             Logger = LoggerInstance;
             LoggerInstance.Msg("StoneMatchTracker: Initialized.");
+
         }
 
         public override void OnSceneWasLoaded(int buildIndex, string sceneName)
@@ -85,7 +86,7 @@ namespace StoneMatchTracker
                 TrackerStone = StoneSplitterScript.objectToSlice;
                 if (TrackerStone == null)
                 {
-                    Core.Logger.Error("TrackerStone is null!");
+                    Logger.Error("TrackerStone is null!");
                     return;
                 }
                 else if (TrackerStone.TryGetComponent<VictoryAnimator>(out var anim))
@@ -94,7 +95,7 @@ namespace StoneMatchTracker
                 }
                 else
                 { 
-                   Core.Logger.Error("TrackerStone does not have a VictoryAnimator component!");
+                   Logger.Error("TrackerStone does not have a VictoryAnimator component!");
                 }
             }
 
@@ -122,24 +123,21 @@ namespace StoneMatchTracker
             {
                 if (localPlayerRoundScore + remotePlayerRoundScore == 1)
                 {
-                    Logger.Msg("Round ended, generating stone");
                     GenerateTrackerStone();
-                    yield return new WaitForSeconds(2f);
+                    yield return new WaitForSeconds(1f);
                     yield return MelonCoroutines.Start(TrackerStone.GetComponent<StoneSummoner>().SummonStone());
 
                     if (localPlayerRoundScore == 0)
                     {
-                        Logger.Msg("You Lost");
                         yield return new WaitForSeconds(0.5f);
                         yield return MelonCoroutines.Start(StoneSplitterScript.SplitStone(UnityEngine.Random.Range(StoneSplitterScript.minPieces, StoneSplitterScript.maxPieces)));
                     }
                 }
                 else if (localPlayerRoundScore == remotePlayerRoundScore)
                 {
-                    yield return new WaitForSeconds(3f);
+                    yield return new WaitForSeconds(4f);
                     if (StoneSplitterScript.objectIsSplit)
                     {
-                        Logger.Msg("You Won! Clawing it back...");
                         yield return MelonCoroutines.Start(StoneSplitterScript.ReturnShardsToOriginal());
                         TrackerStone = StoneSplitterScript.objectToSlice;
                         yield return new WaitForSeconds(0.5f);
@@ -149,8 +147,7 @@ namespace StoneMatchTracker
                 }
                 else
                 {
-                    Logger.Msg("Match Over");
-                    yield return new WaitForSeconds(3f);
+                    yield return new WaitForSeconds(4f);
                     if (StoneSplitterScript.objectIsSplit)
                     {
                         yield return MelonCoroutines.Start(StoneSplitterScript.ReturnShardsToOriginal());
@@ -244,20 +241,16 @@ namespace StoneMatchTracker
             {
                 remotePlayerHealth = remotePlayer.Data.HealthPoints;
             }
-            Logger.Msg($"Local Player Health: {localPlayerHealth}, enemy {remotePlayerHealth}");
             if (PlayerIsInMatch())
             {
                 if (localPlayerHealth > remotePlayerHealth)
                 {
                     localPlayerRoundScore++;
-                    Logger.Msg("You won a round!");
                 }
                 else if (localPlayerHealth < remotePlayerHealth)
                 {
                     remotePlayerRoundScore++;
-                    Logger.Msg("You lost a round...");
                 }
-                Logger.Msg($"Local Player score: {localPlayerRoundScore}, enemy {remotePlayerRoundScore}");
             }
         }
 

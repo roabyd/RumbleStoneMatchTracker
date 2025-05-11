@@ -24,7 +24,7 @@ namespace MatchCounterFiles
         private Quaternion initialRotation;
         private Quaternion intendedRotation;
         private Vector3 initialLocalPosition;
-
+        private float startTime;
 
         void Start()
         {
@@ -38,6 +38,7 @@ namespace MatchCounterFiles
             summoning = false;
             Animating = false;
             intendedRotation = transform.localRotation;
+            startTime = Time.time; // mark the time when object is instantiated
         }
 
         public IEnumerator SummonStone()
@@ -83,18 +84,19 @@ namespace MatchCounterFiles
 
         void FixedUpdate()
         {
+            float elapsed = Time.time - startTime;
             if (endPosition != null && summoning && !rb.isKinematic)
             {
                 Vector3 directionToHand = (endPosition.transform.position + endPosition.transform.up * 0.1f) - transform.position;
 
                 float distanceToHand = directionToHand.magnitude;
 
-                if (distanceToHand > stopDistance)
+                if (distanceToHand > stopDistance && elapsed < 10)
                 {
                     float dampingFactor = Mathf.Clamp(distanceToHand / 7f, 0.2f, 1f);
                     if (distanceToHand < 1f)
                     {
-                        pullForce = 2;
+                        pullForce = 2.5f;
                     }
                     else
                     {

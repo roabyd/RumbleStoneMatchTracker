@@ -1,0 +1,10 @@
+{
+  "name": "StoneMatchTracker",
+  "version_number": "1.0.0",
+  "website_url": "",
+  "description": "A lore imagined method of keeping track of a match score. If the player wins,a stone is summoned to their hand as a reminder, if they lose, the stone will be shattered into fragments. If there is a tie, the stone will be split in half",
+  "dependencies": [
+	"LavaGang-MelonLoader-0.6.6",
+    "UlvakSkillz-RumbleModdingAPI-3.3.2"
+  ]
+}

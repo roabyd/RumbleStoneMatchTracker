@@ -2,7 +2,6 @@
 using UnityEngine;
 using EzySlice;
 using MelonLoader;
-using MatchCounterFiles;
 
 namespace StoneMatchTracker
 {
