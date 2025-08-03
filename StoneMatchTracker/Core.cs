@@ -193,7 +193,7 @@ namespace StoneMatchTracker
             {
                 GameObject.Destroy(StoneAttachPoint);
             }
-            Transform playerRightHand = PlayerManager.instance.localPlayer.Controller.transform.GetChild(0)
+            Transform playerRightHand = PlayerManager.instance.localPlayer.Controller.transform.GetChild(1)
                 .GetChild(1).GetChild(0).GetChild(4).GetChild(0).GetChild(2).GetChild(0).GetChild(0).GetChild(0);
 
             int rightGauntlet = PlayerManager.instance.AllPlayers[0].Data.visualData.CustomizationPartIndexes[5];

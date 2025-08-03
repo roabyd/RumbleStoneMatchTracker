@@ -1,5 +1,6 @@
 ﻿using MatchCounterFiles;
 using MelonLoader;
+using RumbleModdingAPI;
 using UnityEngine;
 
 
@@ -7,7 +8,7 @@ namespace StoneMatchTracker
 {
     internal class ModResources
     {
-        public static Il2CppAssetBundle Bundle;
+        public static AssetBundle Bundle;
 
         public static AudioClip Sound1;
         public static AudioClip Sound2;
@@ -24,7 +25,7 @@ namespace StoneMatchTracker
         { 
             if (initialized && !reload) return;
 
-            Bundle = Il2CppAssetBundleManager.LoadFromFile(@"UserData/stonetrackerbundle");
+            Bundle = Calls.LoadAssetBundleFromFile(@"UserData/stonetrackerbundle");
 
             LoadSoundFiles();
 

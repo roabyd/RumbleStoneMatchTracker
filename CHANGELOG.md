@@ -1,3 +1,6 @@
+# Version 1.1.0
+- Updated to support Rumble Version 0.4.2.1
+
 # Version 1.0.0
 - Created
 
